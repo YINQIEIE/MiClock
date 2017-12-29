@@ -73,6 +73,7 @@ public class MiClockView extends View {
     //松手后的回弹动画
     private AnimatorSet animatorSet;
     private ValueAnimator mShakeAnim;
+    private RectF scaleRectF;
 
     public MiClockView(Context context) {
         super(context);
@@ -145,7 +146,8 @@ public class MiClockView extends View {
         centerPoint.y = mHeight / 2;
 
         mRadius = (mWidth - 2 * padding) / 2;
-        mScaleLength = 0.12f * mRadius;
+        padding += 0.08f * mRadius;
+        mScaleLength = 0.10f * mRadius;
         //设置刻度间隔线宽度
         bgColorPaint.setStrokeWidth(0.012f * mRadius);
         //0.75 ~ 1.0 颜色变化的范围
@@ -159,10 +161,18 @@ public class MiClockView extends View {
                 mWidth - padding - numberRectWid / 2,
                 mHeight - padding - numberRectWid / 2);
 
+        scaleRectF = new RectF(padding + numberRectWid + 0.08f * mRadius,
+                padding + numberRectWid + 0.08f * mRadius,
+                mWidth - (padding + numberRectWid + 0.08f * mRadius),
+                mHeight - (padding + numberRectWid + 0.08f * mRadius));
+
+        scaleRectF.inset(0.5f * mScaleLength, 0.5f * mScaleLength);
+
         secondOffset = padding + space + numberRectWid + mScaleLength;
+        secondOffset = scaleRectF.top + 0.5f * mScaleLength + 0.06f * mRadius;//最顶点位置
         //第一个 10，数字到刻度线的距离，第二个 10，刻度线到秒针的距离，第三个 10 ，保证分针到秒针的最小距离
-        minuteOffset = padding + space + numberRectWid + mScaleLength + space + 0.06f * mRadius + space;
-        hourOffset = padding + space + numberRectWid + mScaleLength + space + 0.06f * mRadius + space;
+        minuteOffset = secondOffset + 0.08f * mRadius;//秒针三角形的高度为 0.08f * mRadius
+        hourOffset = minuteOffset + 0.04f * mRadius;//时针顶点离分针顶点的位置距离为 0.04f * mRadius
         maxCanvasTranslate = 0.02f * mRadius;
     }
 
@@ -240,11 +250,6 @@ public class MiClockView extends View {
         canvas.save();
         canvas.translate(mCanvasTranslateX, mCanvasTranslateY);
 
-        RectF scaleRectF = new RectF(padding + numberRectWid + space * 2,
-                padding + numberRectWid + space * 2,
-                mWidth - (padding + numberRectWid + space * 2),
-                mHeight - (padding + numberRectWid + space * 2));
-        scaleRectF.inset(0.5f * mScaleLength, 0.5f * mScaleLength);
         canvas.drawArc(scaleRectF, 0, 360, false, scaleRingPaint);
 
         scaleLineMatrix.setRotate(mSecondDegree - 90, centerPoint.x, centerPoint.y);
@@ -253,11 +258,11 @@ public class MiClockView extends View {
 
         for (int i = 0; i < 200; i++) {
             canvas.drawLine(centerPoint.x,
-                    padding + numberRectWid + space * 2,
-                    getWidth() / 2,
-                    padding + numberRectWid + mScaleLength + space * 2,
+                    scaleRectF.top - mScaleLength * 0.5f,
+                    centerPoint.x,
+                    scaleRectF.top + mScaleLength * 0.5f,
                     bgColorPaint);
-            canvas.rotate(1.8f, getWidth() / 2, getHeight() / 2);
+            canvas.rotate(1.8f, centerPoint.x, centerPoint.y);
         }
         canvas.restore();
     }
@@ -301,9 +306,9 @@ public class MiClockView extends View {
         canvas.rotate(mSecondDegree, centerPoint.x, centerPoint.y);
         secondHandPath.reset();
         //第一个 10 ，文字离刻度写死的距离，待替换；第二个 10 ，刻度离秒针的距离
-        secondHandPath.moveTo(centerPoint.x, secondOffset + 0.06f * mRadius);
-        secondHandPath.lineTo(centerPoint.x - 0.05f * mRadius, secondOffset + 0.14f * mRadius);
-        secondHandPath.lineTo(centerPoint.x + 0.05f * mRadius, secondOffset + 0.14f * mRadius);
+        secondHandPath.moveTo(centerPoint.x, secondOffset);
+        secondHandPath.lineTo(centerPoint.x - 0.05f * mRadius, secondOffset + 0.08f * mRadius);
+        secondHandPath.lineTo(centerPoint.x + 0.05f * mRadius, secondOffset + 0.08f * mRadius);
         secondHandPath.close();
 
         canvas.drawPath(secondHandPath, secAndMinHandPaint);
@@ -323,7 +328,7 @@ public class MiClockView extends View {
         minuteHandPath.moveTo(centerPoint.x - 0.015f * mRadius, centerPoint.y);
         minuteHandPath.lineTo(centerPoint.x + 0.015f * mRadius, centerPoint.y);
         minuteHandPath.lineTo(centerPoint.x + 0.01f * mRadius, minuteOffset + 0.06f * mRadius);
-        minuteHandPath.quadTo(centerPoint.x, minuteOffset + 0.04f * mRadius, centerPoint.x - 0.01f * mRadius, minuteOffset + 0.06f * mRadius);
+        minuteHandPath.quadTo(centerPoint.x, minuteOffset + 0.03f * mRadius, centerPoint.x - 0.01f * mRadius, minuteOffset + 0.06f * mRadius);
         minuteHandPath.close();
 
         canvas.drawPath(minuteHandPath, secAndMinHandPaint);
@@ -342,8 +347,8 @@ public class MiClockView extends View {
         hourHandPath.reset();
         hourHandPath.moveTo(centerPoint.x - 0.02f * mRadius, centerPoint.y);
         hourHandPath.lineTo(centerPoint.x + 0.02f * mRadius, centerPoint.y);
-        hourHandPath.lineTo(centerPoint.x + 0.01f * mRadius, hourOffset + 0.14f * mRadius);
-        hourHandPath.quadTo(centerPoint.x, hourOffset + 0.12f * mRadius, centerPoint.x - 0.01f * mRadius, hourOffset + 0.14f * mRadius);
+        hourHandPath.lineTo(centerPoint.x + 0.01f * mRadius, hourOffset + 0.09f * mRadius);
+        hourHandPath.quadTo(centerPoint.x, hourOffset + 0.04f * mRadius, centerPoint.x - 0.01f * mRadius, hourOffset + 0.09f * mRadius);
         hourHandPath.close();
 
         canvas.drawPath(hourHandPath, hourPaint);
