@@ -47,7 +47,7 @@ public class MiClockView extends View {
     private float mRadius;//半径，去掉 padding
     private float mScaleLength;//刻度线长度
     private SweepGradient sweepGradient;//刻度背景圆环渐变对象
-    private int colorLight = 0x88FFFFFF, colorDark = 0xFFFFFFFF;//圆环渐变色范围
+    private int colorLight = 0x30FFFFFF, colorDark = 0xFFFFFFFF;//圆环渐变色范围
 
     //突出显示秒针扫过的区域
     private Matrix scaleLineMatrix = new Matrix();
