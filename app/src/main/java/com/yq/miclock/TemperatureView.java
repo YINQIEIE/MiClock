@@ -30,6 +30,7 @@ public class TemperatureView extends View {
     }
 
     private void init() {
+        setBackgroundColor(Color.WHITE);
         bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         bgPaint.setStyle(Paint.Style.STROKE);
 
@@ -56,7 +57,7 @@ public class TemperatureView extends View {
         centerX = getMeasuredWidth() / 2;
         centerY = getMeasuredHeight() / 2;
         ringWidth = (int) (0.25 * centerX);
-        padding = ringWidth / 2 + 20;
+        padding = 40;
         SweepGradient bgGradient = new SweepGradient(centerX, centerY, new int[]{Color.BLUE, Color.GREEN}, null);
         bgPaint.setShader(bgGradient);
         bgPaint.setStrokeWidth(ringWidth);
@@ -73,7 +74,7 @@ public class TemperatureView extends View {
 
     private void drawBackground(Canvas canvas) {
         RectF rectF = new RectF(0, 0, mWidth, mHeight);
-        rectF.inset(padding, padding);
+        rectF.inset(ringWidth / 2 + padding, ringWidth / 2 + padding);
 //        RectF rectF = new RectF(ringWidth / 2 + padding, ringWidth / 2 + padding, getWidth() - ringWidth / 2 - padding, getHeight() - ringWidth / 2 - padding);
         canvas.save();
         canvas.rotate(135, centerX, centerY);
@@ -88,8 +89,8 @@ public class TemperatureView extends View {
 
             canvas.drawArc(rectF, 0.2f, 5.6f, false, linePaint);
 
-            if (i == 0) {
-                canvas.drawLine(mWidth - 20 - ringWidth, centerY - 2, mWidth, centerY + 2, currentLinePaint);
+            if (i == 14) {
+                canvas.drawLine(mWidth - padding - ringWidth, centerY - 2, mWidth, centerY + 2, currentLinePaint);
 //                canvas.drawArc(rectF, -0.2f, 0.2f, false, currentLinePaint);
             }
             canvas.rotate(6f, centerX, centerY);
