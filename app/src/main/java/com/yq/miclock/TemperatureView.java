@@ -15,7 +15,7 @@ import android.view.View;
 
 public class TemperatureView extends View {
 
-    private int colorBegin, colorEnd, dotColor, distance, tempBegin, tempEnd, currentTemp;
+    private int colorBegin, colorEnd, dotColor, distance, tempBegin, tempEnd, currentTemp;//distance 圆点和刻度间的距离
     private float deltaTemp;//两条刻度线之间的温度差值
     private float scaleRatio = 0.25f;//刻度线长度占控件宽度比例
     private Paint bgPaint, //渐变色背景画笔
@@ -24,6 +24,8 @@ public class TemperatureView extends View {
     private int centerX, centerY;
     private int ringWidth, dotStartX, padding, mWidth, mHeight;
     private SweepGradient bgGradient;
+    private float downX = 0;//当前手指位置
+    private TemperatureListener temperatureListener;//滑动时候回调接口，返回当前温度值
 
     public TemperatureView(Context context) {
         this(context, null);
@@ -91,7 +93,8 @@ public class TemperatureView extends View {
         dotStartX = getMeasuredWidth() - padding - ringWidth - distance;
     }
 
-    float downX = 0;
+
+//    float downY = 0;
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -99,10 +102,12 @@ public class TemperatureView extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 downX = event.getX();
+//                downY = event.getY();
                 System.out.println(downX);
                 break;
             case MotionEvent.ACTION_MOVE:
                 float currentX = event.getX();
+//                float currentY = event.getY();
                 float diffX = currentX - downX;
                 System.out.println("diffX =  " + diffX);
                 setCurrentTempByDelta(calcDeltaTemp(diffX));
@@ -133,6 +138,8 @@ public class TemperatureView extends View {
             currentTemp = tempBegin;
         else if (currentTemp > tempEnd)
             currentTemp = tempEnd;
+        if (null != temperatureListener)
+            temperatureListener.onMove(currentTemp);
         System.out.println(currentTemp);
         setCurrentTemp(currentTemp);
     }
@@ -174,6 +181,8 @@ public class TemperatureView extends View {
      * @return
      */
     private void drawCurrentScale(Canvas canvas) {
+        currentLinePaint.setTextSize(40);
+        canvas.drawText(currentTemp + "", centerX, centerY, currentLinePaint);
         float currentTempDegree = (currentTemp - tempBegin) / deltaTemp;
 //        if (currentTempDegree < -225)
 //            currentTempDegree = -225;
@@ -199,5 +208,20 @@ public class TemperatureView extends View {
 
     public int getCurrentTemp() {
         return currentTemp;
+    }
+
+    public interface TemperatureListener {
+
+        void onMove(int currentTemp);
+
+    }
+
+    /**
+     * 设置回调监听接口
+     *
+     * @param temperatureListener
+     */
+    public void setTemperatureListener(TemperatureListener temperatureListener) {
+        this.temperatureListener = temperatureListener;
     }
 }
