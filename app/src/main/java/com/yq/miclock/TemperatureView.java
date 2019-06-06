@@ -20,12 +20,13 @@ public class TemperatureView extends View {
     private float scaleRatio = 0.25f;//刻度线长度占控件宽度比例
     private Paint bgPaint, //渐变色背景画笔
             dotPaint, //圆点画笔
-            linePaint, currentLinePaint;
+            linePaint, currentLinePaint, curPaint;
     private int centerX, centerY;
     private int ringWidth, dotStartX, padding, mWidth, mHeight;
     private SweepGradient bgGradient;
     private float downX = 0;//当前手指位置
     private TemperatureListener temperatureListener;//滑动时候回调接口，返回当前温度值
+    private double angleToRotate, lastAngle;
 
     public TemperatureView(Context context) {
         this(context, null);
@@ -77,6 +78,11 @@ public class TemperatureView extends View {
         currentLinePaint.setStyle(Paint.Style.STROKE);
         currentLinePaint.setStrokeWidth(4);
 
+        curPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        curPaint.setColor(Color.RED);
+        curPaint.setStyle(Paint.Style.STROKE);
+        curPaint.setStrokeWidth(4);
+
     }
 
     @Override
@@ -94,7 +100,7 @@ public class TemperatureView extends View {
     }
 
 
-//    float downY = 0;
+    float downY = 0;
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -102,12 +108,13 @@ public class TemperatureView extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 downX = event.getX();
-//                downY = event.getY();
+                downY = event.getY();
                 System.out.println(downX);
                 break;
             case MotionEvent.ACTION_MOVE:
                 float currentX = event.getX();
-//                float currentY = event.getY();
+                float currentY = event.getY();
+                calcAngle(currentX, currentY);
                 float diffX = currentX - downX;
                 System.out.println("diffX =  " + diffX);
                 setCurrentTempByDelta(calcDeltaTemp(diffX));
@@ -119,6 +126,38 @@ public class TemperatureView extends View {
                 break;
         }
         return true;
+    }
+
+    private void calcAngle(float currentX, float currentY) {
+        float deltaX = currentX - centerX;
+        float deltaY = currentY - centerY;
+        double sin = deltaY / (Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+        double angle = Math.toDegrees(Math.asin(sin));//角度
+        System.out.println("angle = " + angle);
+
+        if (currentX == centerX && currentY == centerY) return;
+
+//        if (currentX >= centerX && currentY <= centerY)//第一象限
+//            angleToRotate = angle;
+//        else if (currentX <= centerX && currentY <= centerY)//第二象限
+//            angleToRotate = -(angle + 180);
+//        else if (currentX < centerX && currentY > centerY)//第三象限
+//            angleToRotate = -angle - 180;
+//        else
+//            angleToRotate = angle;
+        if (currentX >= centerX && currentY <= centerY)
+            angleToRotate = angle;
+        else if (currentX >= centerX && currentY > centerY)
+            angleToRotate = angle - 360;
+        else
+            angleToRotate = -(angle + 180);
+        if (angleToRotate <= -225)
+            angleToRotate = -225;
+        else if (angleToRotate >= 45)
+            angleToRotate = 45;
+        else
+            lastAngle = angleToRotate;
+        System.out.println("angleToRotate = " + angleToRotate);
     }
 
     /**
@@ -191,6 +230,14 @@ public class TemperatureView extends View {
         canvas.save();
         canvas.rotate(-225 + currentTempDegree, centerX, centerY);
         canvas.drawLine(mWidth - padding - ringWidth, centerY - 2, mWidth, centerY + 2, currentLinePaint);
+        canvas.restore();
+        double angle = angleToRotate;
+        if (lastAngle == -225 || lastAngle == 45)
+            angle = lastAngle;
+        canvas.save();
+        canvas.rotate((float) angle, centerX, centerY);
+        System.out.println("angleToRotate draw = " + angle);
+        canvas.drawLine(mWidth - padding - ringWidth, centerY - 2, mWidth, centerY + 2, curPaint);
         canvas.restore();
     }
 
