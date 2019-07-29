@@ -7,10 +7,12 @@
     android:orientation="vertical">
 
     <com.yq.miclock.TemperatureView
+        android:id="@+id/tempView"
         android:layout_width="300dp"
         android:layout_height="300dp"
         app:color_begin="@android:color/holo_blue_bright"
         app:color_end="@android:color/holo_green_dark"
+        app:current_temp="150"
         app:distance="16dp"
         app:padding="20dp"
         app:scale_ratio="0.25"

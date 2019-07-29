@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="TemperatureView">
-        <attr name="tempValue_start" format="integer|reference" />
-        <attr name="tempValue_end" format="integer|reference" />
+        <attr name="tempValue_start" format="float|reference" />
+        <attr name="tempValue_end" format="float|reference" />
         <attr name="color_begin" format="color|reference" />
         <attr name="color_end" format="color|reference" />
         <attr name="color_dot" format="color|reference" />
         <attr name="scale_ratio" format="float|reference" />
         <attr name="padding" format="dimension|reference" />
         <attr name="distance" format="dimension|reference" />
+        <attr name="current_temp" format="float|reference" />
     </declare-styleable>
 </resources>

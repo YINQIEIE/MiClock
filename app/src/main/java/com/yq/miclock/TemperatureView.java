@@ -15,12 +15,12 @@ import android.view.View;
 
 public class TemperatureView extends View {
 
-    private int colorBegin, colorEnd, dotColor, distance, tempBegin, tempEnd, currentTemp;//distance 圆点和刻度间的距离
-    private float deltaTemp;//两条刻度线之间的温度差值
+    private int colorBegin, colorEnd, dotColor, distance;//distance 圆点和刻度间的距离
+    private float tempBegin, tempEnd, currentTemp, deltaTemp;
     private float scaleRatio = 0.25f;//刻度线长度占控件宽度比例
     private Paint bgPaint, //渐变色背景画笔
             dotPaint, //圆点画笔
-            linePaint, currentLinePaint, curPaint;
+            linePaint, currentLinePaint, textPaint;
     private int centerX, centerY;
     private int ringWidth, dotStartX, padding, mWidth, mHeight;
     private SweepGradient bgGradient;
@@ -29,7 +29,7 @@ public class TemperatureView extends View {
     float currentX, lastX;
     float currentY, lastY;
     boolean handleTouch = true;//是否继续处理滑动事件
-    private double angleToRotate;
+    private float angleToRotate;
 
     public TemperatureView(Context context) {
         this(context, null);
@@ -50,14 +50,16 @@ public class TemperatureView extends View {
         colorBegin = typedArray.getColor(R.styleable.TemperatureView_color_begin, Color.BLUE);
         colorEnd = typedArray.getColor(R.styleable.TemperatureView_color_end, Color.GREEN);
         dotColor = typedArray.getColor(R.styleable.TemperatureView_color_dot, Color.GRAY);
-        tempBegin = typedArray.getInt(R.styleable.TemperatureView_tempValue_start, 16);
-        tempEnd = typedArray.getInt(R.styleable.TemperatureView_tempValue_end, 40);
+        tempBegin = typedArray.getFloat(R.styleable.TemperatureView_tempValue_start, 100);
+        tempEnd = typedArray.getFloat(R.styleable.TemperatureView_tempValue_end, 200);
+        currentTemp = typedArray.getFloat(R.styleable.TemperatureView_current_temp, tempBegin);
         scaleRatio = typedArray.getFloat(R.styleable.TemperatureView_scale_ratio, 0.25f);
         padding = typedArray.getDimensionPixelOffset(R.styleable.TemperatureView_padding, 200);
         distance = typedArray.getDimensionPixelOffset(R.styleable.TemperatureView_distance, 100);
         typedArray.recycle();
-        deltaTemp = (float) (tempEnd - tempBegin) / 270;//平分成60格，底部15格不显示刻度
-        currentTemp = tempBegin;
+        deltaTemp = (tempEnd - tempBegin) / 270;
+        angleToRotate = (currentTemp - tempBegin) / deltaTemp + 135;
+        angleToRotate = angleToRotate > 270 ? angleToRotate - 270 : angleToRotate;
     }
 
     private void init() {
@@ -81,10 +83,11 @@ public class TemperatureView extends View {
         currentLinePaint.setStyle(Paint.Style.STROKE);
         currentLinePaint.setStrokeWidth(4);
 
-        curPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        curPaint.setColor(Color.RED);
-        curPaint.setStyle(Paint.Style.STROKE);
-        curPaint.setStrokeWidth(4);
+        textPaint = new Paint(currentLinePaint);
+        textPaint.setStyle(Paint.Style.STROKE);
+        textPaint.setStrokeWidth(4);
+        textPaint.setTextSize(40);
+        textPaint.setTextAlign(Paint.Align.CENTER);
 
     }
 
@@ -125,24 +128,19 @@ public class TemperatureView extends View {
                     handleTouch = false;
                 }
                 if ((currentAngle <= 45 || currentAngle >= 135) && handleTouch) {
+                    calCurrentTemp(currentAngle);
                     angleToRotate = currentAngle;
                     lastX = currentX;
                     lastY = currentY;
                     invalidate();
                 }
-//                float diffX = currentX - downX;
-//                System.out.println("diffX =  " + diffX);
-//                setCurrentTempByDelta(calcDeltaTemp(diffX));
-//                downX = currentX;
 
                 break;
             case MotionEvent.ACTION_UP:
 
                 break;
         }
-        return super.
-
-                onTouchEvent(event);
+        return super.onTouchEvent(event);
     }
 
     /**
@@ -171,26 +169,17 @@ public class TemperatureView extends View {
     }
 
     /**
-     * 计算温度变化值
+     * 计算当前温度值
      *
-     * @param diff 滑动距离
-     * @return
+     * @param currentAngle
      */
-    private float calcDeltaTemp(float diff) {
-        return diff / mWidth * (tempEnd - tempBegin) + 0.5f;
-    }
+    private void calCurrentTemp(float currentAngle) {
+        float diffAngle = currentAngle - 135;
+        if (diffAngle < 0) diffAngle += 360;
+        currentTemp = Math.round(deltaTemp * diffAngle + tempBegin);
 
-    private void setCurrentTempByDelta(float deltaTemp) {
-        System.out.println("deltaTemp =  " + deltaTemp);
-        currentTemp += deltaTemp;
-        if (currentTemp < tempBegin)
-            currentTemp = tempBegin;
-        else if (currentTemp > tempEnd)
-            currentTemp = tempEnd;
         if (null != temperatureListener)
             temperatureListener.onMove(currentTemp);
-        System.out.println(currentTemp);
-        setCurrentTemp(currentTemp);
     }
 
     @Override
@@ -226,13 +215,7 @@ public class TemperatureView extends View {
      * @return
      */
     private void drawCurrentScale(Canvas canvas) {
-        currentLinePaint.setTextSize(40);
-//        canvas.drawText(currentTemp + "", centerX, centerY, currentLinePaint);
-        float currentTempDegree = (currentTemp - tempBegin) / deltaTemp;
-//        if (currentTempDegree < -225)
-//            currentTempDegree = -225;
-//        else if (currentTempDegree > 45)
-//            currentTempDegree = 45;
+        canvas.drawText(currentTemp + "", centerX, centerY, textPaint);
         canvas.save();
         System.out.println("angleToRotate draw = " + angleToRotate);
         canvas.rotate((float) angleToRotate, centerX, centerY);
@@ -240,15 +223,6 @@ public class TemperatureView extends View {
 //        RectF rectF = new RectF(padding + ringWidth / 2, padding + ringWidth / 2, mWidth - padding - ringWidth / 2, mHeight - padding - ringWidth / 2);
 //        canvas.drawArc(rectF, -0.4f, 0.4f, false, currentLinePaint);
         canvas.restore();
-
-//        double angle = angleToRotate;
-//        if (lastAngle == 225 || lastAngle == 315)
-//            angle = lastAngle;
-//        canvas.save();
-//        canvas.rotate((float) angle, centerX, centerY);
-//        System.out.println("angleToRotate draw = " + angle);
-//        canvas.drawLine(mWidth - padding - ringWidth, centerY - 2, mWidth, centerY + 2, curPaint);
-//        canvas.restore();
     }
 
     /**
@@ -263,13 +237,13 @@ public class TemperatureView extends View {
         invalidate();
     }
 
-    public int getCurrentTemp() {
+    public float getCurrentTemp() {
         return currentTemp;
     }
 
     public interface TemperatureListener {
 
-        void onMove(int currentTemp);
+        void onMove(float currentTemp);
 
     }
 
