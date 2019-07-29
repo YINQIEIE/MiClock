@@ -17,4 +17,9 @@
         app:tempValue_end="200"
         app:tempValue_start="100" />
 
+    <com.yq.miclock.MiClockView
+        android:layout_width="400dp"
+        android:layout_height="400dp"
+        android:background="@color/colorPrimary" />
+
 </LinearLayout>
