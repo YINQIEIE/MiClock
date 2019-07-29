@@ -24,9 +24,12 @@ public class TemperatureView extends View {
     private int centerX, centerY;
     private int ringWidth, dotStartX, padding, mWidth, mHeight;
     private SweepGradient bgGradient;
-    private float downX = 0;//当前手指位置
     private TemperatureListener temperatureListener;//滑动时候回调接口，返回当前温度值
-    private double angleToRotate, lastAngle;
+    //手指位置，lastX,lastY用于判断是否是顺时针
+    float currentX, lastX;
+    float currentY, lastY;
+    boolean handleTouch = true;//是否继续处理滑动事件
+    private double angleToRotate;
 
     public TemperatureView(Context context) {
         this(context, null);
@@ -93,7 +96,6 @@ public class TemperatureView extends View {
         centerX = getMeasuredWidth() / 2;
         centerY = getMeasuredHeight() / 2;
         ringWidth = (int) (scaleRatio * centerX);
-//        currentLinePaint.setStrokeWidth(ringWidth);
 
         bgPaint.setStrokeWidth(ringWidth);
         linePaint.setStrokeWidth(ringWidth + 4);
@@ -101,44 +103,32 @@ public class TemperatureView extends View {
     }
 
 
-    float downY = 0;
-    float currentX, lastX;
-    float currentY, lastY;
-    boolean continueDraw = true;//是否继续处理滑动事件
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                downX = event.getX();
-                downY = event.getY();
                 currentX = event.getX();
                 currentY = event.getY();
                 float curAngle = calcAngle(currentX, currentY);
-                System.out.println("angle start = " + angleToRotate);
                 if (angleToRotate - 10 < 0)
-                    continueDraw = curAngle >= angleToRotate - 10 + 360 || curAngle <= angleToRotate + 10;
+                    handleTouch = curAngle >= angleToRotate - 10 + 360 || curAngle <= angleToRotate + 10;
                 else
-                    continueDraw = (curAngle <= angleToRotate + 10 && curAngle >= angleToRotate - 10);
-                return continueDraw;
+                    handleTouch = (curAngle <= angleToRotate + 10 && curAngle >= angleToRotate - 10);
+                return handleTouch;
             case MotionEvent.ACTION_MOVE:
                 currentX = event.getX();
                 currentY = event.getY();
                 float currentAngle = calcAngle(currentX, currentY);
+                //滑动超过边界一定范围不再进行处理滑动事件，防止多圈滑动从最小跳到最大
                 if ((isClockWise() && currentAngle > 60 && currentAngle <= 90) || (!isClockWise() && currentAngle >= 90 && currentAngle < 120)) {
-                    continueDraw = false;
-                } else if (currentAngle > 45 && currentAngle < 135) {
-//                    angleToRotate = lastAngle;
-//                    continueDraw = false;
-                } else {
-                    if (continueDraw) {
-                        angleToRotate = currentAngle;
-//                        lastAngle = angleToRotate;
-                        lastX = currentX;
-                        lastY = currentY;
-                        invalidate();
-                    }
+                    handleTouch = false;
+                }
+                if ((currentAngle <= 45 || currentAngle >= 135) && handleTouch) {
+                    angleToRotate = currentAngle;
+                    lastX = currentX;
+                    lastY = currentY;
+                    invalidate();
                 }
 //                float diffX = currentX - downX;
 //                System.out.println("diffX =  " + diffX);
@@ -150,7 +140,9 @@ public class TemperatureView extends View {
 
                 break;
         }
-        return super.onTouchEvent(event);
+        return super.
+
+                onTouchEvent(event);
     }
 
     /**
