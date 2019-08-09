@@ -1,14 +1,18 @@
 package com.yq.miclock;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.SweepGradient;
+import android.os.Build;
 import android.support.annotation.MainThread;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -30,6 +34,9 @@ public class TemperatureView extends View {
     float currentY, lastY;
     boolean handleTouch = true;//是否继续处理滑动事件
     private float angleToRotate;
+    private int[] argbBegin = new int[4];
+    private int[] argbEnd = new int[4];
+    private int[] result;
 
     public TemperatureView(Context context) {
         this(context, null);
@@ -60,6 +67,8 @@ public class TemperatureView extends View {
         deltaTemp = (tempEnd - tempBegin) / 270;
         angleToRotate = (currentTemp - tempBegin) / deltaTemp + 135;
         angleToRotate = angleToRotate > 270 ? angleToRotate - 270 : angleToRotate;
+        getArgb(argbBegin, colorBegin);
+        getArgb(argbEnd, colorEnd);
     }
 
     private void init() {
@@ -75,8 +84,9 @@ public class TemperatureView extends View {
         dotPaint.setStrokeWidth(2);
 
         linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        linePaint.setColor(Color.WHITE);
+        linePaint.setColor(Color.RED);
         linePaint.setStyle(Paint.Style.STROKE);
+        linePaint.setStrokeWidth(4);
 
         currentLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         currentLinePaint.setShader(bgGradient);
@@ -98,10 +108,12 @@ public class TemperatureView extends View {
         mHeight = getMeasuredHeight();
         centerX = getMeasuredWidth() / 2;
         centerY = getMeasuredHeight() / 2;
+        System.out.println(centerX);
+        System.out.println(centerY);
         ringWidth = (int) (scaleRatio * centerX);
 
         bgPaint.setStrokeWidth(ringWidth);
-        linePaint.setStrokeWidth(ringWidth + 4);
+//        linePaint.setStrokeWidth(ringWidth + 4);
         dotStartX = getMeasuredWidth() - padding - ringWidth - distance;
     }
 
@@ -186,6 +198,17 @@ public class TemperatureView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         drawBackground(canvas);
+        canvas.save();
+//        for (int i = 0; i < 4; i++) {
+//            canvas.rotate(90, centerX, centerY);
+//            if (i % 2 == 0)
+//                currentLinePaint.setColor(Color.RED);
+//            else
+//                currentLinePaint.setColor(Color.YELLOW);
+//            canvas.drawLine(mWidth - padding - ringWidth, centerY - 2, mWidth, centerY + 2, currentLinePaint);
+//        }
+//        canvas.restore();
+
 //        canvas.drawLine(0, centerY - 2, mWidth, centerY + 2, currentLinePaint);
 //        canvas.drawLine(centerX - 2, 0, centerX + 2, mHeight, currentLinePaint);
 
@@ -193,20 +216,41 @@ public class TemperatureView extends View {
 
     //画刻度盘
     private void drawBackground(Canvas canvas) {
-        RectF rectF = new RectF(0, 0, mWidth, mHeight);
-        rectF.inset(ringWidth / 2 + padding, ringWidth / 2 + padding);
         canvas.save();
         canvas.rotate(-225, centerX, centerY);
-        canvas.drawArc(rectF, -0.2f, 270.2f, false, bgPaint);
-        for (int i = 0; i < 60; i++) {
+        for (int i = 0; i < 72; i++) {
             //画小圆点
-            if (i <= 54)
+            if (i <= 54) {
                 canvas.drawLine(dotStartX, centerY - 1, dotStartX + 1, centerY + 1, dotPaint);
-            canvas.drawArc(rectF, 0.2f, 4.6f, false, linePaint);
-            canvas.rotate(5f, centerX, centerY);
+                setLinePaintColor(i);
+                canvas.drawLine(mWidth - padding - ringWidth, centerY - 2, mWidth - padding, centerY + 2, linePaint);
+                canvas.rotate(5f, centerX, centerY);
+            } else
+                break;
         }
         canvas.restore();
         drawCurrentScale(canvas);
+    }
+
+    private void setLinePaintColor(int i) {
+        result = new int[4];
+        for (int j = 0; j < 4; j++) {
+            result[j] = argbBegin[j] + Math.round((argbEnd[j] - argbBegin[j]) * (float) i * 5 / 270);
+        }
+        linePaint.setColor(Color.argb(result[0], result[1], result[2], result[3]));
+    }
+
+    /**
+     * 根据色值获取argb的值
+     *
+     * @param argb  数组
+     * @param color 色值
+     */
+    private void getArgb(int[] argb, int color) {
+        argb[0] = Color.alpha(color);
+        argb[1] = Color.red(color);
+        argb[2] = Color.green(color);
+        argb[3] = Color.blue(color);
     }
 
     /**
@@ -217,11 +261,8 @@ public class TemperatureView extends View {
     private void drawCurrentScale(Canvas canvas) {
         canvas.drawText(currentTemp + "", centerX, centerY, textPaint);
         canvas.save();
-        System.out.println("angleToRotate draw = " + angleToRotate);
-        canvas.rotate((float) angleToRotate, centerX, centerY);
+        canvas.rotate(angleToRotate, centerX, centerY);
         canvas.drawLine(mWidth - padding - ringWidth, centerY - 2, mWidth - padding / 2, centerY + 2, currentLinePaint);
-//        RectF rectF = new RectF(padding + ringWidth / 2, padding + ringWidth / 2, mWidth - padding - ringWidth / 2, mHeight - padding - ringWidth / 2);
-//        canvas.drawArc(rectF, -0.4f, 0.4f, false, currentLinePaint);
         canvas.restore();
     }
 
